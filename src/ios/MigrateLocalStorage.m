@@ -2,7 +2,7 @@
 
 @implementation MigrateLocalStorage
 
-- (BOOL) copyFrom:(NSString*)src to:(NSString*)dest
+- (BOOL) moveFrom:(NSString*)src to:(NSString*)dest
 {
     NSFileManager* fileManager = [NSFileManager defaultManager];
 
@@ -13,7 +13,7 @@
 
     // Bail out if dest file exists
     if ([fileManager fileExistsAtPath:dest]) {
-        return NO;
+        [fileManager removeItemAtPath:dest error:nil];
     }
 
     // create path to dest
@@ -22,7 +22,7 @@
     }
 
     // copy src to dest
-    return [fileManager copyItemAtPath:src toPath:dest error:nil];
+    return [fileManager moveItemAtPath:src toPath:dest error:nil];
 }
 
 - (void) migrateLocalStorage
@@ -54,10 +54,16 @@
     // Only copy data if no existing localstorage data exists yet for wkwebview
     if (![[NSFileManager defaultManager] fileExistsAtPath:target]) {
         NSLog(@"No existing localstorage data found for WKWebView. Migrating data from UIWebView");
-        [self copyFrom:original to:target];
-        [self copyFrom:[original stringByAppendingString:@"-shm"] to:[target stringByAppendingString:@"-shm"]];
-        [self copyFrom:[original stringByAppendingString:@"-wal"] to:[target stringByAppendingString:@"-wal"]];
     }
+    
+    // Only copy data if no existing localstorage data exists yet for wkwebview
+    if ([[NSFileManager defaultManager] fileExistsAtPath:original]) {
+        NSLog(@"No existing localstorage data found for WKWebView. Migrating data from UIWebView");
+        [self moveFrom:original to:target];
+        [self moveFrom:[original stringByAppendingString:@"-shm"] to:[target stringByAppendingString:@"-shm"]];
+        [self moveFrom:[original stringByAppendingString:@"-wal"] to:[target stringByAppendingString:@"-wal"]];
+    }
+    
 }
 
 - (void)pluginInitialize
